@@ -70,16 +70,24 @@ public interface CurrencyMapper {
         }
     }
 
-    default CurrencyPair mapToCurrencyPair(CurrencyPairDTO source) {
-        return new CurrencyPair(source.getBaseCurrency().getCode(), source.getQuoteCurrency().getCode());
-    }
-
     default Instrument mapToInstrument(CurrencyPairDTO source) {
         return mapToCurrencyPair(source);
     }
 
-    default Instrument mapToInstrument(CurrencyPair source) {
-        return mapToCurrencyPair(mapToCurrencyPairDTO(source));
+    default CurrencyPair mapToCurrencyPair(CurrencyPairDTO source) {
+        return new CurrencyPair(mapToCurrency(source.getBaseCurrency()), mapToCurrency(source.getQuoteCurrency()));
     }
+
+
+    /**
+     * CurrencyPair is an instrument
+     * @param source
+     * @return
+     */
+//    @Deprecated
+//    default Instrument mapToInstrument(CurrencyPair source) {
+//        return source;
+//        //return mapToCurrencyPair(mapToCurrencyPairDTO(source));
+//    }
 
 }

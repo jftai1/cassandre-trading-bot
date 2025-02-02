@@ -126,7 +126,7 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
             // Making the order.
             MarketOrder m = new MarketOrder(UTIL_MAPPER.mapToOrderType(orderTypeDTO),
                     amount.setScale(currencyPair.getBaseCurrencyPrecision(), FLOOR),
-                    CURRENCY_MAPPER.mapToCurrencyPair(currencyPair),
+                    CURRENCY_MAPPER.mapToInstrument(currencyPair),
                     getGeneratedOrderId(),
                     null);
             logger.debug("Sending market order: {} - {} - {}",
@@ -195,7 +195,7 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
             // Making the order.
             LimitOrder l = new LimitOrder(UTIL_MAPPER.mapToOrderType(orderTypeDTO),
                     amount.setScale(currencyPair.getBaseCurrencyPrecision(), FLOOR),
-                    CURRENCY_MAPPER.mapToCurrencyPair(currencyPair),
+                    CURRENCY_MAPPER.mapToInstrument(currencyPair),
                     getGeneratedOrderId(),
                     null,
                     limitPrice);

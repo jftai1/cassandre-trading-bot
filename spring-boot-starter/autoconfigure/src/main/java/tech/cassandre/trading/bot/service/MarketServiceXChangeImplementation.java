@@ -1,15 +1,22 @@
 package tech.cassandre.trading.bot.service;
 
 import lombok.NonNull;
+import org.knowm.xchange.currency.CurrencyPair;
+import org.knowm.xchange.dto.marketdata.CandleStickData;
 import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.knowm.xchange.service.marketdata.params.CurrencyPairsParam;
+import org.knowm.xchange.service.trade.params.CandleStickDataParams;
+import org.knowm.xchange.service.trade.params.DefaultCandleStickParamWithLimit;
+import tech.cassandre.trading.bot.dto.market.CandleDTO;
+import tech.cassandre.trading.bot.dto.market.CandlePeriodTypeDTO;
 import tech.cassandre.trading.bot.dto.market.TickerDTO;
 import tech.cassandre.trading.bot.dto.util.CurrencyPairDTO;
 import tech.cassandre.trading.bot.util.base.service.BaseService;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +28,9 @@ import java.util.stream.Collectors;
  */
 public class MarketServiceXChangeImplementation extends BaseService implements MarketService {
 
-    /** XChange service. */
+    /**
+     * XChange service.
+     */
     private final MarketDataService marketDataService;
 
     /**
@@ -83,4 +92,34 @@ public class MarketServiceXChangeImplementation extends BaseService implements M
         }
     }
 
+    @Override
+    @SuppressWarnings("checkstyle:DesignForExtension")
+    public Set<CandleDTO> getCandles(@NonNull final CurrencyPairDTO currencyPairDTO,
+                                     @NonNull final CandlePeriodTypeDTO periodType,
+                                     @NonNull final Date startDate,
+                                     @NonNull final Date endDate,
+                                     final int limit) {
+        try {
+            // We create the currency pairs parameter required by some exchanges.
+            CurrencyPair currencyPair = CURRENCY_MAPPER.mapToCurrencyPair(currencyPairDTO);
+
+            // Consume a token from the token bucket.
+            // If a token is not available this method will block until the refill adds one to the bucket.
+            bucket.asBlocking().consume(1);
+
+            logger.debug("Retrieving candles for {} currency pair", currencyPair);
+            CandleStickDataParams candleStickDataParams = new DefaultCandleStickParamWithLimit(startDate,
+                    endDate,
+                    periodType.getPeriodInMillis(),
+                    limit);
+            final CandleStickData candleStickData = marketDataService.getCandleStickData(currencyPair, candleStickDataParams);
+            return CANDLE_MAPPER.mapToCandleDTOSet(candleStickData);
+
+        } catch (IOException e) {
+            logger.error("Error retrieving candles: {}", e.getMessage());
+            return Collections.emptySet();
+        } catch (InterruptedException e) {
+            return Collections.emptySet();
+        }
+    }
 }

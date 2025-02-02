@@ -4,6 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import tech.cassandre.trading.bot.domain.BacktestingCandle;
 import tech.cassandre.trading.bot.domain.ImportedCandle;
+import tech.cassandre.trading.bot.dto.market.CandleDTO;
 import tech.cassandre.trading.bot.dto.market.TickerDTO;
 
 /**
@@ -28,5 +29,14 @@ public interface BacktestingTickerMapper {
     @Mapping(target = "bidSize", ignore = true)
     @Mapping(target = "askSize", ignore = true)
     TickerDTO mapToTickerDTO(BacktestingCandle source);
+
+    @Mapping(target = "currencyPair", source = "id.currencyPair")
+    @Mapping(target = "open", source = "open")
+    @Mapping(target = "close", source = "close")
+    @Mapping(target = "high", source = "high")
+    @Mapping(target = "low", source = "low")
+    @Mapping(target = "volume", source = "volume")
+    @Mapping(target = "timestamp", source = "timestamp")
+    CandleDTO mapToCandleDTO(BacktestingCandle source);
 
 }

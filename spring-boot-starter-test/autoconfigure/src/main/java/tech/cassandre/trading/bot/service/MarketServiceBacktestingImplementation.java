@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.mapstruct.factory.Mappers;
 import tech.cassandre.trading.bot.batch.OrderFlux;
 import tech.cassandre.trading.bot.batch.TradeFlux;
+import tech.cassandre.trading.bot.dto.market.CandleDTO;
+import tech.cassandre.trading.bot.dto.market.CandlePeriodTypeDTO;
 import tech.cassandre.trading.bot.dto.market.TickerDTO;
 import tech.cassandre.trading.bot.dto.util.CurrencyPairDTO;
 import tech.cassandre.trading.bot.repository.BacktestingCandleRepository;
@@ -13,6 +15,7 @@ import tech.cassandre.trading.bot.repository.TradeRepository;
 import tech.cassandre.trading.bot.util.exception.DryModeException;
 import tech.cassandre.trading.bot.util.mapper.BacktestingTickerMapper;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -78,6 +81,26 @@ public class MarketServiceBacktestingImplementation implements MarketService {
                 .filter(ticker -> currencyPairs.contains(ticker.getCurrencyPairDTO()))
                 .map(BACKTESTING_TICKER_MAPPER::mapToTickerDTO)
                 .collect(Collectors.toSet());
+    }
+
+    @SuppressWarnings("checkstyle:DesignForExtension")
+    @Override
+    public Set<CandleDTO> getCandles(final CurrencyPairDTO currencyPairDTO, final CandlePeriodTypeDTO periodType, final Date startDate, final Date endDate, final int limit) {
+        // Before replying, we check that all trades and orders arrived.
+        await().until(() -> {
+            orderFlux.update();
+            tradeFlux.update();
+            return orderRepository.count() == tradeRepository.count();
+        });
+
+        // We get the result for the corresponding sequence, and we only select the replies for the request currency pairs.
+        return backtestingCandleRepository
+                .findByIdTestSessionIdAndIdResponseSequenceId(testSessionId, sequence.getAndIncrement())
+                .stream()
+                .filter(ticker -> currencyPairDTO.equals(ticker.getCurrencyPairDTO()))
+                .map(BACKTESTING_TICKER_MAPPER::mapToCandleDTO)
+                .collect(Collectors.toSet());
+
     }
 
     /**
